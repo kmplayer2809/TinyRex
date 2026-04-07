@@ -8,14 +8,36 @@ import { createId } from '../utils/id'
 import { resolveTemplate } from '../utils/environment'
 import { buildAxiosConfig } from '../utils/request'
 
+export interface CollectionFolderNode {
+  id: string
+  name: string
+  type: 'collection' | 'folder'
+  children: CollectionItemNode[]
+}
+
+export interface CollectionRequestNode {
+  id: string
+  name: string
+  type: 'request'
+  request: RequestModel
+}
+
+export type CollectionItemNode = CollectionFolderNode | CollectionRequestNode
+
 interface WorkspaceState {
   workspace: Workspace
+  collections: CollectionFolderNode[]
   addTab: () => void
   closeTab: (tabId: string) => void
   setActiveTab: (tabId: string) => void
   reorderTabs: (fromTabId: string, toTabId: string) => void
   updateActiveRequest: (patch: Partial<RequestModel>) => void
   sendCurrentRequest: () => Promise<void>
+  addCollection: (name: string) => void
+  addCollectionFolder: (parentId: string, name: string) => void
+  saveActiveRequestToCollection: (parentId: string, name: string) => void
+  renameCollectionItem: (id: string, name: string) => void
+  deleteCollectionItem: (id: string) => void
 }
 
 function createNewTab(): Tab {
@@ -179,10 +201,94 @@ function toResponseModel(
   }
 }
 
+function appendCollectionChild(
+  items: CollectionFolderNode[],
+  parentId: string,
+  item: CollectionItemNode,
+): CollectionFolderNode[] {
+  return items.map((collection) => {
+    if (collection.id === parentId) {
+      return {
+        ...collection,
+        children: [...collection.children, item],
+      }
+    }
+
+    return {
+      ...collection,
+      children: appendToChildren(collection.children, parentId, item),
+    }
+  })
+}
+
+function appendToChildren(
+  children: CollectionItemNode[],
+  parentId: string,
+  item: CollectionItemNode,
+): CollectionItemNode[] {
+  return children.map((child) => {
+    if (child.type === 'request') {
+      return child
+    }
+
+    if (child.id === parentId) {
+      return {
+        ...child,
+        children: [...child.children, item],
+      }
+    }
+
+    return {
+      ...child,
+      children: appendToChildren(child.children, parentId, item),
+    }
+  })
+}
+
+function renameCollectionInChildren(
+  children: CollectionItemNode[],
+  id: string,
+  name: string,
+): CollectionItemNode[] {
+  return children.map((child) => {
+    if (child.id === id) {
+      return {
+        ...child,
+        name,
+      }
+    }
+
+    if (child.type === 'request') {
+      return child
+    }
+
+    return {
+      ...child,
+      children: renameCollectionInChildren(child.children, id, name),
+    }
+  })
+}
+
+function removeCollectionInChildren(children: CollectionItemNode[], id: string): CollectionItemNode[] {
+  return children
+    .filter((child) => child.id !== id)
+    .map((child) => {
+      if (child.type === 'request') {
+        return child
+      }
+
+      return {
+        ...child,
+        children: removeCollectionInChildren(child.children, id),
+      }
+    })
+}
+
 export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
     (set, get) => ({
       workspace: createDefaultWorkspace(),
+      collections: [],
       addTab: () => {
         set((state) => {
           const newTab = createNewTab()
@@ -281,6 +387,87 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               }
             }),
           },
+        }))
+      },
+      addCollection: (name) => {
+        set((state) => ({
+          collections: [
+            ...state.collections,
+            {
+              id: createId(),
+              name,
+              type: 'collection',
+              children: [],
+            },
+          ],
+        }))
+      },
+      addCollectionFolder: (parentId, name) => {
+        set((state) => ({
+          collections: appendCollectionChild(state.collections, parentId, {
+            id: createId(),
+            name,
+            type: 'folder',
+            children: [],
+          }),
+        }))
+      },
+      saveActiveRequestToCollection: (parentId, name) => {
+        set((state) => {
+          const activeTab = state.workspace.tabs.find((tab) => tab.id === state.workspace.activeTabId)
+          if (!activeTab) {
+            return state
+          }
+
+          return {
+            collections: appendCollectionChild(state.collections, parentId, {
+              id: createId(),
+              name,
+              type: 'request',
+              request: {
+                ...activeTab.request,
+                params: activeTab.request.params.map((param) => ({ ...param })),
+                headers: activeTab.request.headers.map((header) => ({ ...header })),
+                body: {
+                  ...activeTab.request.body,
+                  formItems: activeTab.request.body.formItems?.map((item) => ({ ...item })),
+                },
+                auth: {
+                  ...activeTab.request.auth,
+                  bearer: activeTab.request.auth.bearer ? { ...activeTab.request.auth.bearer } : undefined,
+                  basic: activeTab.request.auth.basic ? { ...activeTab.request.auth.basic } : undefined,
+                  apiKey: activeTab.request.auth.apiKey ? { ...activeTab.request.auth.apiKey } : undefined,
+                },
+              },
+            }),
+          }
+        })
+      },
+      renameCollectionItem: (id, name) => {
+        set((state) => ({
+          collections: state.collections.map((collection) => {
+            if (collection.id === id) {
+              return {
+                ...collection,
+                name,
+              }
+            }
+
+            return {
+              ...collection,
+              children: renameCollectionInChildren(collection.children, id, name),
+            }
+          }),
+        }))
+      },
+      deleteCollectionItem: (id) => {
+        set((state) => ({
+          collections: state.collections
+            .filter((collection) => collection.id !== id)
+            .map((collection) => ({
+              ...collection,
+              children: removeCollectionInChildren(collection.children, id),
+            })),
         }))
       },
       sendCurrentRequest: async () => {

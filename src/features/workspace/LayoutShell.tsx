@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react'
 
 import { useTheme } from '../../theme/theme'
+import { CollectionsPanel } from '../collections/CollectionsPanel'
 import { RequestBuilder } from '../request/RequestBuilder'
 import { ResponsePanel } from '../request/ResponsePanel'
 import { HeaderBar } from './HeaderBar'
@@ -25,9 +26,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
           className="w-64 border-r p-4"
           style={{ borderColor: colors.border, backgroundColor: colors.surface }}
         >
-          <p className="text-sm" style={{ color: colors.textSecondary }}>
-            Workspace
-          </p>
+          <CollectionsPanel />
         </aside>
       )}
 
