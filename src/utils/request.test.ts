@@ -16,17 +16,18 @@ function makeRequest(overrides: Partial<RequestModel> = {}): RequestModel {
 }
 
 describe('buildAxiosConfig', () => {
-  it('adds enabled query params to url', () => {
+  it('adds enabled query params to url and preserves duplicate keys', () => {
     const cfg = buildAxiosConfig(
       makeRequest({
         params: [
           { id: '1', key: 'page', value: '2', enabled: true },
-          { id: '2', key: 'ignored', value: 'x', enabled: false },
+          { id: '2', key: 'page', value: '3', enabled: true },
+          { id: '3', key: 'ignored', value: 'x', enabled: false },
         ],
       }),
     )
 
-    expect(cfg.url).toBe('https://api.test.com/users?page=2')
+    expect(cfg.url).toBe('https://api.test.com/users?page=2&page=3')
   })
 
   it('includes enabled headers and bearer auth header', () => {

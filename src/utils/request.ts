@@ -18,7 +18,7 @@ export function buildAxiosConfig(request: RequestModel): AxiosRequestConfig {
   request.params
     .filter((param) => param.enabled && param.key)
     .forEach((param) => {
-      url.searchParams.set(param.key, param.value)
+      url.searchParams.append(param.key, param.value)
     })
 
   const headers: Record<string, string> = {}
