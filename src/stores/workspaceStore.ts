@@ -295,10 +295,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         const requestSnapshot = initiatingTab.request
         const templateValues = getActiveEnvironmentValues(workspace)
         const resolvedRequest = resolveRequestTemplates(requestSnapshot, templateValues)
-        const config = buildAxiosConfig(resolvedRequest)
         const startedAt = performance.now()
 
         try {
+          const config = buildAxiosConfig(resolvedRequest)
           const response = await axios(config)
           const elapsed = Math.max(0, Math.round(performance.now() - startedAt))
           const responseModel = toResponseModel(
@@ -330,11 +330,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           const responseModel = toResponseModel(
             {
               status: errorResponse?.status,
-              statusText:
-                errorResponse?.statusText ||
-                (error instanceof Error && error.message ? error.message : 'Request Error'),
+              statusText: errorResponse?.statusText || 'Request Error',
               headers: errorResponse?.headers,
-              body: errorResponse?.data,
+              body:
+                errorResponse?.data ||
+                (error instanceof Error && error.message ? error.message : 'Request Error'),
             },
             elapsed,
           )

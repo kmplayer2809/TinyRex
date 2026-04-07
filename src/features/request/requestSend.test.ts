@@ -145,6 +145,39 @@ describe('sendCurrentRequest', () => {
     expect(activeTab?.response?.size).toBeGreaterThan(0)
   })
 
+  it('captures invalid URL errors without throwing and stores request error response', async () => {
+    useWorkspaceStore.setState((state) => ({
+      workspace: {
+        ...state.workspace,
+        tabs: state.workspace.tabs.map((tab) => ({
+          ...tab,
+          request: {
+            ...tab.request,
+            method: 'GET',
+            url: '://bad-url',
+          },
+        })),
+      },
+    }))
+
+    await expect(useWorkspaceStore.getState().sendCurrentRequest()).resolves.toBeUndefined()
+
+    expect(mockedAxios).not.toHaveBeenCalled()
+
+    const activeTab = useWorkspaceStore
+      .getState()
+      .workspace.tabs.find((tab) => tab.id === useWorkspaceStore.getState().workspace.activeTabId)
+
+    expect(activeTab?.response).toMatchObject({
+      status: 0,
+      statusText: 'Request Error',
+      headers: {},
+    })
+    expect(activeTab?.response?.body).toContain('Invalid URL')
+    expect(activeTab?.response?.time).toBeTypeOf('number')
+    expect(activeTab?.response?.size).toBeGreaterThan(0)
+  })
+
   it('keeps response on initiating tab when active tab changes mid-flight', async () => {
     const workspace = createWorkspaceWithTwoTabs()
     const [firstTab, secondTab] = workspace.tabs
