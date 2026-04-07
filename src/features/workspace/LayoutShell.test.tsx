@@ -25,4 +25,21 @@ describe('LayoutShell', () => {
     ).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Show sidebar' })).toBeInTheDocument()
   })
+
+  it('toggles theme from header control', () => {
+    render(
+      <ThemeProvider>
+        <LayoutShell>
+          <div>Main workspace</div>
+        </LayoutShell>
+      </ThemeProvider>
+    )
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to dark theme' }))
+
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark')
+    expect(screen.getByRole('button', { name: 'Switch to light theme' })).toBeInTheDocument()
+  })
 })
