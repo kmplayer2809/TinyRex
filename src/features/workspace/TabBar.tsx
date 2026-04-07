@@ -1,13 +1,17 @@
+import { useState } from 'react'
+
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useTheme } from '../../theme/theme'
 
 export function TabBar() {
   const { colors } = useTheme()
+  const [draggedTabId, setDraggedTabId] = useState<string | null>(null)
   const tabs = useWorkspaceStore((state) => state.workspace.tabs)
   const activeTabId = useWorkspaceStore((state) => state.workspace.activeTabId)
   const addTab = useWorkspaceStore((state) => state.addTab)
   const setActiveTab = useWorkspaceStore((state) => state.setActiveTab)
   const closeTab = useWorkspaceStore((state) => state.closeTab)
+  const reorderTabs = useWorkspaceStore((state) => state.reorderTabs)
 
   return (
     <div
@@ -20,12 +24,8 @@ export function TabBar() {
           const label = tab.isDirty ? `${tab.name} *` : tab.name
 
           return (
-            <button
+            <div
               key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
               style={{
                 borderColor: isActive ? colors.accent : colors.border,
@@ -33,27 +33,45 @@ export function TabBar() {
                 backgroundColor: isActive ? colors.background : colors.surface,
               }}
             >
-              <span>{label || `Request ${index + 1}`}</span>
-              <span
-                role="button"
-                aria-label={`Close tab ${tab.name || index + 1}`}
-                tabIndex={0}
-                className="text-xs"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  closeTab(tab.id)
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                draggable
+                onClick={() => setActiveTab(tab.id)}
+                onDragStart={(event) => {
+                  setDraggedTabId(tab.id)
+                  event.dataTransfer.effectAllowed = 'move'
+                  event.dataTransfer.setData('text/plain', tab.id)
                 }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    closeTab(tab.id)
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  event.dataTransfer.dropEffect = 'move'
+                }}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  const sourceTabId = draggedTabId ?? event.dataTransfer.getData('text/plain')
+                  if (sourceTabId) {
+                    reorderTabs(sourceTabId, tab.id)
+                    setActiveTab(sourceTabId)
                   }
+                  setDraggedTabId(null)
+                }}
+                onDragEnd={() => {
+                  setDraggedTabId(null)
                 }}
               >
+                <span>{label || `Request ${index + 1}`}</span>
+              </button>
+              <button
+                type="button"
+                aria-label={`Close tab ${tab.name || index + 1}`}
+                className="text-xs"
+                onClick={() => closeTab(tab.id)}
+              >
                 ×
-              </span>
-            </button>
+              </button>
+            </div>
           )
         })}
       </div>

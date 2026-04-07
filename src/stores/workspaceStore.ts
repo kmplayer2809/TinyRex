@@ -10,6 +10,7 @@ interface WorkspaceState {
   addTab: () => void
   closeTab: (tabId: string) => void
   setActiveTab: (tabId: string) => void
+  reorderTabs: (fromTabId: string, toTabId: string) => void
   updateActiveRequest: (patch: Partial<RequestModel>) => void
 }
 
@@ -88,6 +89,31 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             workspace: {
               ...state.workspace,
               activeTabId: tabId,
+            },
+          }
+        })
+      },
+      reorderTabs: (fromTabId, toTabId) => {
+        set((state) => {
+          if (fromTabId === toTabId) {
+            return state
+          }
+
+          const fromIndex = state.workspace.tabs.findIndex((tab) => tab.id === fromTabId)
+          const toIndex = state.workspace.tabs.findIndex((tab) => tab.id === toTabId)
+
+          if (fromIndex === -1 || toIndex === -1) {
+            return state
+          }
+
+          const nextTabs = [...state.workspace.tabs]
+          const [movedTab] = nextTabs.splice(fromIndex, 1)
+          nextTabs.splice(toIndex, 0, movedTab)
+
+          return {
+            workspace: {
+              ...state.workspace,
+              tabs: nextTabs,
             },
           }
         })
