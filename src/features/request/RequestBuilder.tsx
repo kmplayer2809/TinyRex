@@ -38,6 +38,7 @@ export function RequestBuilder() {
   const [section, setSection] = useState<RequestSection>('params')
   const workspace = useWorkspaceStore((state) => state.workspace)
   const updateActiveRequest = useWorkspaceStore((state) => state.updateActiveRequest)
+  const sendCurrentRequest = useWorkspaceStore((state) => state.sendCurrentRequest)
 
   const activeTab = useMemo(
     () => workspace.tabs.find((tab) => tab.id === workspace.activeTabId),
@@ -86,6 +87,9 @@ export function RequestBuilder() {
 
         <button
           type="button"
+          onClick={() => {
+            void sendCurrentRequest()
+          }}
           className="rounded-md border px-3 py-2 text-sm font-medium"
           style={{ borderColor: colors.border, backgroundColor: colors.surface, color: colors.textPrimary }}
         >
