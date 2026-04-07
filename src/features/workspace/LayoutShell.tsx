@@ -1,7 +1,9 @@
 import { type ReactNode, useState } from 'react'
 
 import { useTheme } from '../../theme/theme'
+import { RequestBuilder } from '../request/RequestBuilder'
 import { HeaderBar } from './HeaderBar'
+import { TabBar } from './TabBar'
 
 type LayoutShellProps = {
   children: ReactNode
@@ -33,7 +35,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
           sidebarVisible={sidebarVisible}
           onToggleSidebar={() => setSidebarVisible((visible) => !visible)}
         />
-        <main className="flex-1 p-4">{children}</main>
+        <TabBar />
+        <main className="flex flex-1 flex-col p-4">
+          <RequestBuilder />
+          {children}
+        </main>
       </div>
     </div>
   )
