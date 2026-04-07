@@ -43,7 +43,7 @@ export function buildAxiosConfig(request: RequestModel): AxiosRequestConfig {
     }
 
     if (request.auth.apiKey.addTo === 'query') {
-      url.searchParams.set(request.auth.apiKey.key, request.auth.apiKey.value)
+      url.searchParams.append(request.auth.apiKey.key, request.auth.apiKey.value)
     }
   }
 

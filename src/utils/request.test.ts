@@ -79,6 +79,20 @@ describe('buildAxiosConfig', () => {
     expect(queryCfg.url).toBe('https://api.test.com/users?api_key=secret')
   })
 
+  it('appends api key query auth without overwriting existing same key', () => {
+    const cfg = buildAxiosConfig(
+      makeRequest({
+        params: [{ id: '1', key: 'api_key', value: 'existing', enabled: true }],
+        auth: {
+          type: 'api-key',
+          apiKey: { key: 'api_key', value: 'secret', addTo: 'query' },
+        },
+      }),
+    )
+
+    expect(cfg.url).toBe('https://api.test.com/users?api_key=existing&api_key=secret')
+  })
+
   it('includes body data when body type is not none', () => {
     const cfg = buildAxiosConfig(
       makeRequest({
