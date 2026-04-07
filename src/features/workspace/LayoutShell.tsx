@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react'
 
 import { useTheme } from '../../theme/theme'
 import { RequestBuilder } from '../request/RequestBuilder'
+import { ResponsePanel } from '../request/ResponsePanel'
 import { HeaderBar } from './HeaderBar'
 import { TabBar } from './TabBar'
 
@@ -36,8 +37,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
           onToggleSidebar={() => setSidebarVisible((visible) => !visible)}
         />
         <TabBar />
-        <main className="flex flex-1 flex-col p-4">
+        <main className="flex flex-1 flex-col gap-4 p-4">
           <RequestBuilder />
+          <ResponsePanel />
           {children}
         </main>
       </div>

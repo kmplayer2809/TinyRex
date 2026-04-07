@@ -14,4 +14,14 @@ describe('App', () => {
 
     expect(screen.getByText('TinyRex')).toBeInTheDocument()
   })
+
+  it('mounts response panel in the live layout flow', () => {
+    render(
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    )
+
+    expect(screen.getByText('Send a request to see the response.')).toBeInTheDocument()
+  })
 })

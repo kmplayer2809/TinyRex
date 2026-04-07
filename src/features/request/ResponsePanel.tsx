@@ -6,7 +6,12 @@ import { useTheme } from '../../theme/theme'
 type ResponseView = 'pretty' | 'raw' | 'headers'
 
 function formatPrettyBody(body: string): string {
-  return body
+  try {
+    const parsedBody = JSON.parse(body)
+    return JSON.stringify(parsedBody, null, 2)
+  } catch {
+    return body
+  }
 }
 
 export function ResponsePanel() {

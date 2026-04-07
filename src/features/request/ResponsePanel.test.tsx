@@ -46,12 +46,35 @@ describe('ResponsePanel', () => {
     expect(screen.getByRole('tab', { name: 'Raw' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Headers' })).toBeInTheDocument()
 
-    expect(screen.getByText('{"ok":true}')).toBeInTheDocument()
+    const prettyBody = screen.getByText(/"ok": true/)
+    expect(prettyBody.textContent).toContain('\n')
+    expect(prettyBody).toHaveTextContent(/\{\s+"ok": true\s+\}/)
 
     fireEvent.click(screen.getByRole('tab', { name: 'Headers' }))
     expect(screen.getByText('content-type: application/json')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Raw' }))
     expect(screen.getByText('{"ok":true}')).toBeInTheDocument()
+  })
+
+  it('falls back to raw body in Pretty mode when body is not parseable JSON', () => {
+    const workspace = createDefaultWorkspace()
+    workspace.tabs[0].response = {
+      status: 200,
+      statusText: 'OK',
+      headers: { 'content-type': 'text/plain' },
+      body: 'not-json-body',
+      time: 15,
+      size: 13,
+    }
+    useWorkspaceStore.setState({ workspace })
+
+    render(
+      <ThemeProvider>
+        <ResponsePanel />
+      </ThemeProvider>,
+    )
+
+    expect(screen.getByText('not-json-body')).toBeInTheDocument()
   })
 })
