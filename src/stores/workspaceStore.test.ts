@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { createDefaultWorkspace } from '../test/fixtures/workspace'
+import { createDefaultWorkspace } from '../utils/workspaceDefaults'
 import { useWorkspaceStore } from './workspaceStore'
 
 describe('workspaceStore', () => {

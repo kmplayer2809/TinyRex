@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { createDefaultWorkspace } from '../utils/workspaceDefaults'
+import { createDefaultWorkspace } from './workspaceDefaults'
 
-describe('workspace fixture', () => {
+describe('workspaceDefaults', () => {
   it('creates one default tab and activeTabId', () => {
     const ws = createDefaultWorkspace()
 

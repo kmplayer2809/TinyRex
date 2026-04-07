@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { createDefaultWorkspace } from '../test/fixtures/workspace'
+import { createDefaultWorkspace } from '../utils/workspaceDefaults'
 import type { RequestModel, Tab, Workspace } from '../types/workspace'
 import { createId } from '../utils/id'
 
