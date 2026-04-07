@@ -6,6 +6,20 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { ThemeProvider } from '../../theme/theme'
 import { ResponsePanel } from './ResponsePanel'
 
+function setResponse(status: number, statusText: string) {
+  const workspace = createDefaultWorkspace()
+  workspace.tabs[0].response = {
+    status,
+    statusText,
+    headers: { 'content-type': 'application/json' },
+    body: '{"ok":true}',
+    time: 42,
+    size: 128,
+  }
+
+  useWorkspaceStore.setState({ workspace })
+}
+
 describe('ResponsePanel', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -76,5 +90,30 @@ describe('ResponsePanel', () => {
     )
 
     expect(screen.getByText('not-json-body')).toBeInTheDocument()
+  })
+
+  it('applies status badge colors by response range', () => {
+    const cases = [
+      { status: 200, statusText: 'OK', color: '#166534' },
+      { status: 302, statusText: 'Found', color: '#a16207' },
+      { status: 404, statusText: 'Not Found', color: '#b91c1c' },
+      { status: 500, statusText: 'Server Error', color: '#b91c1c' },
+      { status: 0, statusText: 'Request Error', color: '#6b7280' },
+    ]
+
+    for (const testCase of cases) {
+      setResponse(testCase.status, testCase.statusText)
+
+      const { unmount } = render(
+        <ThemeProvider>
+          <ResponsePanel />
+        </ThemeProvider>,
+      )
+
+      const badge = screen.getByText(`${testCase.status} ${testCase.statusText}`)
+      expect(badge).toHaveStyle({ color: testCase.color })
+
+      unmount()
+    }
   })
 })

@@ -285,14 +285,16 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
       sendCurrentRequest: async () => {
         const { workspace } = get()
-        const activeTab = workspace.tabs.find((tab) => tab.id === workspace.activeTabId)
+        const initiatingTabId = workspace.activeTabId
+        const initiatingTab = workspace.tabs.find((tab) => tab.id === initiatingTabId)
 
-        if (!activeTab) {
+        if (!initiatingTab) {
           return
         }
 
+        const requestSnapshot = initiatingTab.request
         const templateValues = getActiveEnvironmentValues(workspace)
-        const resolvedRequest = resolveRequestTemplates(activeTab.request, templateValues)
+        const resolvedRequest = resolveRequestTemplates(requestSnapshot, templateValues)
         const config = buildAxiosConfig(resolvedRequest)
         const startedAt = performance.now()
 
@@ -313,7 +315,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             workspace: {
               ...state.workspace,
               tabs: state.workspace.tabs.map((tab) =>
-                tab.id === state.workspace.activeTabId ? { ...tab, response: responseModel } : tab,
+                tab.id === initiatingTabId ? { ...tab, response: responseModel } : tab,
               ),
             },
           }))
@@ -341,7 +343,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             workspace: {
               ...state.workspace,
               tabs: state.workspace.tabs.map((tab) =>
-                tab.id === state.workspace.activeTabId ? { ...tab, response: responseModel } : tab,
+                tab.id === initiatingTabId ? { ...tab, response: responseModel } : tab,
               ),
             },
           }))

@@ -3,12 +3,41 @@ import axios from 'axios'
 
 import { createDefaultWorkspace } from '../../utils/workspaceDefaults'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
+import type { Tab } from '../../types/workspace'
 
 vi.mock('axios', () => ({
   default: vi.fn(),
 }))
 
 const mockedAxios = vi.mocked(axios)
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+
+  return { promise, resolve, reject }
+}
+
+function createWorkspaceWithTwoTabs() {
+  const workspace = createDefaultWorkspace()
+  const firstTab = workspace.tabs[0]
+  const secondTab: Tab = {
+    ...firstTab,
+    id: `${firstTab.id}-second`,
+    name: 'Second Request',
+  }
+
+  return {
+    ...workspace,
+    tabs: [firstTab, secondTab],
+    activeTabId: firstTab.id,
+  }
+}
 
 describe('sendCurrentRequest', () => {
   beforeEach(() => {
@@ -114,5 +143,58 @@ describe('sendCurrentRequest', () => {
     })
     expect(activeTab?.response?.time).toBeTypeOf('number')
     expect(activeTab?.response?.size).toBeGreaterThan(0)
+  })
+
+  it('keeps response on initiating tab when active tab changes mid-flight', async () => {
+    const workspace = createWorkspaceWithTwoTabs()
+    const [firstTab, secondTab] = workspace.tabs
+
+    firstTab.request = {
+      ...firstTab.request,
+      method: 'GET',
+      url: 'https://api.test.com/first',
+    }
+
+    secondTab.request = {
+      ...secondTab.request,
+      method: 'GET',
+      url: 'https://api.test.com/second',
+    }
+
+    useWorkspaceStore.setState({ workspace })
+
+    const deferred = createDeferred<{
+      status: number
+      statusText: string
+      headers: Record<string, string>
+      data: { tab: string }
+    }>()
+    mockedAxios.mockReturnValueOnce(deferred.promise)
+
+    const requestPromise = useWorkspaceStore.getState().sendCurrentRequest()
+
+    useWorkspaceStore.getState().setActiveTab(secondTab.id)
+
+    deferred.resolve({
+      status: 200,
+      statusText: 'OK',
+      headers: { 'x-test': '1' },
+      data: { tab: 'first' },
+    })
+
+    await requestPromise
+
+    const currentWorkspace = useWorkspaceStore.getState().workspace
+    const updatedFirstTab = currentWorkspace.tabs.find((tab) => tab.id === firstTab.id)
+    const updatedSecondTab = currentWorkspace.tabs.find((tab) => tab.id === secondTab.id)
+
+    expect(updatedFirstTab?.response).toMatchObject({
+      status: 200,
+      statusText: 'OK',
+      headers: { 'x-test': '1' },
+      body: '{"tab":"first"}',
+    })
+    expect(updatedSecondTab?.response).toBeUndefined()
+    expect(currentWorkspace.activeTabId).toBe(secondTab.id)
   })
 })

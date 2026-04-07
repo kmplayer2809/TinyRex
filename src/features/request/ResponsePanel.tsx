@@ -14,6 +14,22 @@ function formatPrettyBody(body: string): string {
   }
 }
 
+function getStatusBadgeColor(status: number): string {
+  if (status >= 200 && status < 300) {
+    return '#166534'
+  }
+
+  if (status >= 300 && status < 400) {
+    return '#a16207'
+  }
+
+  if (status >= 400 && status < 600) {
+    return '#b91c1c'
+  }
+
+  return '#6b7280'
+}
+
 export function ResponsePanel() {
   const { colors } = useTheme()
   const [view, setView] = useState<ResponseView>('pretty')
@@ -37,11 +53,12 @@ export function ResponsePanel() {
   }
 
   const prettyBody = formatPrettyBody(response.body)
+  const statusColor = getStatusBadgeColor(response.status)
 
   return (
     <section className="rounded-lg border" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
       <header className="flex flex-wrap items-center gap-3 border-b px-4 py-3" style={{ borderColor: colors.border }}>
-        <span className="rounded-full border px-2.5 py-0.5 text-sm font-medium" style={{ borderColor: colors.border }}>
+        <span className="rounded-full border px-2.5 py-0.5 text-sm font-medium" style={{ borderColor: colors.border, color: statusColor }}>
           {response.status} {response.statusText}
         </span>
         <span className="text-sm" style={{ color: colors.textSecondary }}>
