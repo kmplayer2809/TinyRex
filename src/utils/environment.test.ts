@@ -12,11 +12,19 @@ describe('resolveTemplate', () => {
     expect(result).toBe('Hello Alice from Hanoi')
   })
 
-  it('keeps unknown variables unchanged', () => {
-    const result = resolveTemplate('Token: {{KNOWN}} / {{UNKNOWN}}', {
-      KNOWN: 'abc123',
+  it('replaces lowercase variables with provided values', () => {
+    const result = resolveTemplate('API: {{host}}', {
+      host: 'localhost',
     })
 
-    expect(result).toBe('Token: abc123 / {{UNKNOWN}}')
+    expect(result).toBe('API: localhost')
+  })
+
+  it('keeps unknown variables unchanged', () => {
+    const result = resolveTemplate('Token: {{known}} / {{unknown}}', {
+      known: 'abc123',
+    })
+
+    expect(result).toBe('Token: abc123 / {{unknown}}')
   })
 })
