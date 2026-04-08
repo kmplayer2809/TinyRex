@@ -3,7 +3,13 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
 import { createDefaultWorkspace } from '../utils/workspaceDefaults'
-import type { RequestModel, ResponseModel, Tab, Workspace } from '../types/workspace'
+import type {
+  EnvironmentVariable,
+  RequestModel,
+  ResponseModel,
+  Tab,
+  Workspace,
+} from '../types/workspace'
 import { createId } from '../utils/id'
 import { resolveTemplate } from '../utils/environment'
 import { buildAxiosConfig } from '../utils/request'
@@ -38,6 +44,10 @@ interface WorkspaceState {
   saveActiveRequestToCollection: (parentId: string, name: string) => void
   renameCollectionItem: (id: string, name: string) => void
   deleteCollectionItem: (id: string) => void
+  addEnvironment: (name: string) => void
+  setActiveEnvironment: (envId: string) => void
+  upsertEnvironmentVariable: (envId: string, variable: EnvironmentVariable) => void
+  removeEnvironment: (envId: string) => void
 }
 
 function createNewTab(): Tab {
@@ -177,6 +187,114 @@ function getActiveEnvironmentValues(workspace: Workspace): Record<string, string
 
     return acc
   }, {})
+}
+
+function addWorkspaceEnvironment(workspace: Workspace, name: string): Workspace {
+  const trimmedName = name.trim()
+  if (!trimmedName) {
+    return workspace
+  }
+
+  const hasActiveEnvironment = workspace.environments.some((environment) => environment.isActive)
+
+  return {
+    ...workspace,
+    environments: [
+      ...workspace.environments,
+      {
+        id: createId(),
+        name: trimmedName,
+        variables: [],
+        isActive: !hasActiveEnvironment,
+      },
+    ],
+  }
+}
+
+function setWorkspaceActiveEnvironment(workspace: Workspace, envId: string): Workspace {
+  const hasEnvironment = workspace.environments.some((environment) => environment.id === envId)
+  if (!hasEnvironment) {
+    return workspace
+  }
+
+  return {
+    ...workspace,
+    environments: workspace.environments.map((environment) => ({
+      ...environment,
+      isActive: environment.id === envId,
+    })),
+  }
+}
+
+function upsertWorkspaceEnvironmentVariable(
+  workspace: Workspace,
+  envId: string,
+  variable: EnvironmentVariable,
+): Workspace {
+  const trimmedKey = variable.key.trim()
+  if (!trimmedKey) {
+    return workspace
+  }
+
+  const hasEnvironment = workspace.environments.some((environment) => environment.id === envId)
+  if (!hasEnvironment) {
+    return workspace
+  }
+
+  return {
+    ...workspace,
+    environments: workspace.environments.map((environment) => {
+      if (environment.id !== envId) {
+        return environment
+      }
+
+      const existingIndex = environment.variables.findIndex((item) => item.key === trimmedKey)
+      const nextVariable = { ...variable, key: trimmedKey }
+
+      if (existingIndex === -1) {
+        return {
+          ...environment,
+          variables: [...environment.variables, nextVariable],
+        }
+      }
+
+      return {
+        ...environment,
+        variables: environment.variables.map((item, index) => (index === existingIndex ? nextVariable : item)),
+      }
+    }),
+  }
+}
+
+function removeWorkspaceEnvironment(workspace: Workspace, envId: string): Workspace {
+  const removingEnvironment = workspace.environments.find((environment) => environment.id === envId)
+  if (!removingEnvironment) {
+    return workspace
+  }
+
+  const remainingEnvironments = workspace.environments.filter((environment) => environment.id !== envId)
+
+  if (remainingEnvironments.length === 0) {
+    return {
+      ...workspace,
+      environments: [],
+    }
+  }
+
+  if (!removingEnvironment.isActive) {
+    return {
+      ...workspace,
+      environments: remainingEnvironments,
+    }
+  }
+
+  return {
+    ...workspace,
+    environments: remainingEnvironments.map((environment, index) => ({
+      ...environment,
+      isActive: index === 0,
+    })),
+  }
 }
 
 function toResponseModel(
@@ -468,6 +586,26 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               ...collection,
               children: removeCollectionInChildren(collection.children, id),
             })),
+        }))
+      },
+      addEnvironment: (name) => {
+        set((state) => ({
+          workspace: addWorkspaceEnvironment(state.workspace, name),
+        }))
+      },
+      setActiveEnvironment: (envId) => {
+        set((state) => ({
+          workspace: setWorkspaceActiveEnvironment(state.workspace, envId),
+        }))
+      },
+      upsertEnvironmentVariable: (envId, variable) => {
+        set((state) => ({
+          workspace: upsertWorkspaceEnvironmentVariable(state.workspace, envId, variable),
+        }))
+      },
+      removeEnvironment: (envId) => {
+        set((state) => ({
+          workspace: removeWorkspaceEnvironment(state.workspace, envId),
         }))
       },
       sendCurrentRequest: async () => {

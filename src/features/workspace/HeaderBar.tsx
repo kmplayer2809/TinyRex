@@ -1,5 +1,6 @@
 import { ThemeToggle } from '../../components/ThemeToggle'
 import { useTheme } from '../../theme/theme'
+import { EnvironmentSelector } from '../environments/EnvironmentSelector'
 
 type HeaderBarProps = {
   sidebarVisible: boolean
@@ -33,7 +34,10 @@ export function HeaderBar({ sidebarVisible, onToggleSidebar }: HeaderBarProps) {
         </h1>
       </div>
 
-      <ThemeToggle />
+      <div className="flex items-center gap-3">
+        <EnvironmentSelector />
+        <ThemeToggle />
+      </div>
     </header>
   )
 }

@@ -97,6 +97,10 @@ export function RequestBuilder() {
         </button>
       </div>
 
+      <p className="px-4 pt-2 text-xs" style={{ color: colors.textSecondary }}>
+        Use {'{{variableName}}'} in URL, params, headers, auth, and body to substitute active environment values.
+      </p>
+
       <RequestTabs value={section} onChange={setSection} />
 
       <div className="p-4">

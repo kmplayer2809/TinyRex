@@ -4,6 +4,7 @@ import { useTheme } from '../../theme/theme'
 import { CollectionsPanel } from '../collections/CollectionsPanel'
 import { RequestBuilder } from '../request/RequestBuilder'
 import { ResponsePanel } from '../request/ResponsePanel'
+import { EnvironmentPanel } from '../environments/EnvironmentPanel'
 import { HeaderBar } from './HeaderBar'
 import { TabBar } from './TabBar'
 
@@ -27,6 +28,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
           style={{ borderColor: colors.border, backgroundColor: colors.surface }}
         >
           <CollectionsPanel />
+          <EnvironmentPanel />
         </aside>
       )}
 
