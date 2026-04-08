@@ -17,14 +17,23 @@ describe('collections store actions', () => {
     const rootCollection = useWorkspaceStore.getState().collections[0]
     addCollectionFolder(rootCollection.id, 'Users')
 
+    const usersItem = useWorkspaceStore.getState().collections[0].children?.[0]
+    expect(usersItem?.name).toBe('Users')
+    expect(usersItem?.type).toBe('folder')
+
+    if (!usersItem || usersItem.type !== 'folder') {
+      throw new Error('Expected Users item to be a folder')
+    }
+
+    addCollectionFolder(usersItem.id, 'Admin')
+
     const usersFolder = useWorkspaceStore.getState().collections[0].children?.[0]
-    expect(usersFolder?.name).toBe('Users')
-    expect(usersFolder?.type).toBe('folder')
 
-    addCollectionFolder(usersFolder!.id, 'Admin')
+    if (!usersFolder || usersFolder.type !== 'folder') {
+      throw new Error('Expected Users folder after adding Admin')
+    }
 
-    const adminFolder =
-      useWorkspaceStore.getState().collections[0].children?.[0].children?.[0]
+    const adminFolder = usersFolder.children?.[0]
     expect(adminFolder?.name).toBe('Admin')
     expect(adminFolder?.type).toBe('folder')
   })
@@ -36,12 +45,22 @@ describe('collections store actions', () => {
     addCollection('Backend')
     const rootCollection = useWorkspaceStore.getState().collections[0]
     addCollectionFolder(rootCollection.id, 'Auth')
-    const authFolder = useWorkspaceStore.getState().collections[0].children?.[0]
+    const authItem = useWorkspaceStore.getState().collections[0].children?.[0]
+
+    if (!authItem || authItem.type !== 'folder') {
+      throw new Error('Expected Auth item to be a folder')
+    }
 
     updateActiveRequest({ method: 'POST', url: 'https://api.example.com/login' })
-    saveActiveRequestToCollection(authFolder!.id, 'Create Session')
+    saveActiveRequestToCollection(authItem.id, 'Create Session')
 
-    const savedItem = useWorkspaceStore.getState().collections[0].children?.[0].children?.[0]
+    const authFolder = useWorkspaceStore.getState().collections[0].children?.[0]
+
+    if (!authFolder || authFolder.type !== 'folder') {
+      throw new Error('Expected Auth folder after saving request')
+    }
+
+    const savedItem = authFolder.children?.[0]
     expect(savedItem?.type).toBe('request')
     expect(savedItem?.name).toBe('Create Session')
 

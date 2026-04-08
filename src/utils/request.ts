@@ -3,13 +3,7 @@ import type { AxiosRequestConfig } from 'axios'
 import type { RequestModel } from '../types/workspace'
 
 function encodeBasicAuth(username: string, password: string): string {
-  const raw = `${username}:${password}`
-
-  if (typeof btoa === 'function') {
-    return btoa(raw)
-  }
-
-  return Buffer.from(raw).toString('base64')
+  return btoa(`${username}:${password}`)
 }
 
 export function buildAxiosConfig(request: RequestModel): AxiosRequestConfig {
